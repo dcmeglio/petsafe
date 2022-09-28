@@ -36,8 +36,8 @@ class PetSafeClient:
         if self.id_token is None:
             raise Exception("Not authorized! Have you requested a token?")
 
-      #  if time.time() >= self.token_expires_time - 10:
-       #     self.refresh_tokens()
+        if time.time() >= self.token_expires_time - 10:
+            self.refresh_tokens()
 
         headers["Authorization"] = self.id_token
 
