@@ -9,11 +9,23 @@ def get_feeders(client):
     :return: list of Feeders
 
     """
-    response = client.api_get("feeders")
+    response = client.api_get("smart-feed/feeders")
     response.raise_for_status()
     content = response.content.decode("UTF-8")
     return [DeviceSmartFeed(client, feeder_data) for feeder_data in json.loads(content)]
 
+def get_litterboxes(client):
+    """
+    Sends a request to PetSafe's API for all litterboxes associated with account.
+
+    :param client: PetSafeClient with authorization tokens
+    :return: list of Scoopfree litterboxes
+
+    """
+    response = client.api_get("scoopfree/product/product")
+    response.raise_for_status()
+    content = response.content.decode("UTF-8")
+    return [DeviceScoopfree(client, litterbox_data) for litterbox_data in json.loads(content)["data"]]   
 
 class DeviceSmartFeed:
     def __init__(self, client, data):
@@ -225,7 +237,7 @@ class DeviceSmartFeed:
     @property
     def api_path(self):
         """The feeder's path on the API."""
-        return "feeders/" + self.api_name + "/"
+        return "smart-feed/feeders/" + self.api_name + "/"
 
     @property
     def id(self):
@@ -318,3 +330,127 @@ class DeviceSmartFeed:
 
         """
         return int(self.data["is_food_low"])
+
+class DeviceScoopfree:
+    def __init__(self, client, data):
+        """
+        PetSafe Scoopfree device.
+
+        :param client: PetSafeClient with authorization tokens
+        :param data: data regarding litterbox
+        """
+        self.client = client
+        self.data = data
+
+    def __str__(self):
+        return self.to_json()
+
+    def to_json(self):
+        """
+        All litterbox data formatted as JSON.
+
+        """
+        return json.dumps(self.data, indent=2)
+
+    def update_data(self):
+        """
+        Updates self.data to the litterbox's current online state.
+        """
+        response = self.client.api_get(self.api_path)
+        response.raise_for_status()
+        self.data = json.loads(response.content.decode("UTF-8"))
+
+    def rake(self, update_data=True):
+        """
+        Triggers the rake to begin raking.
+        :param update_data: if True, will update the litterbox's data after raking. Defaults to True.
+        """
+        response = self.client.api_post(
+            self.api_path + "rake-now", data={}
+        )
+        response.raise_for_status()
+
+        if update_data:
+            self.update_data()
+            return self.data["data"]
+
+    def reset(self, rakeCount=0, update_data=True):
+        """
+        Resets the rake count to the specified value.
+        :param rakeCount: the value to set the rake count to.
+        :param update_data: if True, will update the litterbox's data after feeding. Defaults to True.
+        """
+        response = self.client.api_patch(
+            self.api_path + "shadow",
+            data={"rakeCount": rakeCount},
+        )
+        response.raise_for_status()
+
+        if update_data:
+            self.update_data()
+            return self.data["data"]
+
+    def modify_timer(self, rakeDelayTime=15, update_data=True):
+        """
+        Modifies the rake timer.
+        :param rakeDelayTime: The amount of time for the rake delay in minutes.
+        :param update_data: if True, will update the litterbox's data after feeding. Defaults to True.
+        """
+        response = self.client.api_patch(
+            self.api_path + "shadow",
+            data={"rakeDelayTime": rakeDelayTime},
+        )
+        response.raise_for_status()
+
+        if update_data:
+            self.update_data()
+            return self.data["data"]
+
+    def get_activity(self):
+        """
+        Requests all litterbox ativity.
+
+        :return: the APIs response in JSON.
+
+        """
+        response = self.client.api_get(self.api_path + "activity")
+        response.raise_for_status()
+        return json.loads(response.content.decode("UTF-8"))
+
+    def patch_setting(self, setting, value, force_update=False):
+        """
+        Changes the value of a specified setting. Sends PATCH to API.
+
+        :param setting: the setting to change
+        :param value: the new value of that setting
+        :param force_update: if True, update ALL data after PATCH. Defaults to False.
+
+        """
+        response = self.client.api_patch(
+            self.api_path + "settings", data={setting: value}
+        )
+        response.raise_for_status()
+
+        if force_update:
+            self.update_data()
+        else:
+            self.data[setting] = value
+
+    @property
+    def api_name(self):
+        """The litterbox's thingName from the API."""
+        return self.data["thingName"]
+
+    @property
+    def api_path(self):
+        """The litterbox's path on the API."""
+        return "scoopfree/product/product/" + self.api_name + "/"
+
+    @property
+    def friendly_name(self):
+        """The litterbox's display name."""
+        return self.data["friendlyName"]
+
+    @friendly_name.setter
+    def friendly_name(self, value):
+        self.patch_setting("friendlyName", value)

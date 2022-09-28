@@ -7,7 +7,7 @@ Connect and control a PetSafe Smart Feed device using the PetSafe-SmartFeed API.
 > PetSafe will lock your account if you request data more often than once per 5 minutes.
 
 ## Installation
-`pip install petsafe-smartfeed`
+`pip install petsafe`
 
 If installing from source code,
 `python setup.py install`
@@ -17,13 +17,13 @@ You **must** use tokens to interact with the PetSafe Smart-Feed API.
 There are two methods to retrieve tokens:
 
 #### Get tokens using command line
-1. Execute `python -m petsafe_smartfeed [email_address]` to request an email code.
+1. Execute `python -m petsafe [email_address]` to request an email code.
 2. Check your email for an email code from PetSafe.
 3. Enter your code to generate tokens.
 
 #### Get tokens using Python
 ```python
-import petsafe_smartfeed as sf
+import petsafe as sf
 
 
 # replace with your email address
@@ -42,10 +42,10 @@ print("access_token:", client.access_token)
 
 
 ## Example usage
-#### List devices
+#### List feeders
 
 ```python
-import petsafe_smartfeed as sf
+import petsafe as sf
 
 client = sf.PetSafeClient(email="email@example.com",
                        id_token="YOUR_ID_TOKEN",
@@ -60,7 +60,7 @@ for device in devices:
 ```
 #### Feed 1/8 cup at normal speed
 ```python
-import petsafe_smartfeed as sf
+import petsafe as sf
 
 client = sf.PetSafeClient(email="email@example.com",
                        id_token="YOUR_ID_TOKEN",
@@ -75,7 +75,7 @@ feeder.feed(amount=1, slow_feed=False)
 ```
 #### Get current battery level (0 - 100)
 ```python
-import petsafe_smartfeed as sf
+import petsafe as sf
 
 client = sf.PetSafeClient(email="email@example.com",
                        id_token="YOUR_ID_TOKEN",
@@ -90,7 +90,7 @@ print(feeder.battery_level)
 ```
 #### Get current food level
 ```python
-import petsafe_smartfeed as sf
+import petsafe as sf
 
 client = sf.PetSafeClient(email="email@example.com",
                        id_token="YOUR_ID_TOKEN",
@@ -108,6 +108,82 @@ elif status == 1:
     print("Feeder is low on food.")
 elif status == 2:
     print("Feeder is out of food.")
+
+```
+
+# get litterboxes
+```python
+import petsafe as sf
+
+client = sf.PetSafeClient(email="email@example.com",
+                       id_token="YOUR_ID_TOKEN",
+                       refresh_token="YOUR_REFRESH_TOKEN",
+                       access_token="YOUR_ACCESS_TOKEN")
+devices = sf.devices.get_litterboxes(client)
+
+# print all litterboxes
+for device in devices:
+    print(device)
+
+```
+
+# get litterbox activity
+```python
+import petsafe as sf
+
+client = sf.PetSafeClient(email="email@example.com",
+                       id_token="YOUR_ID_TOKEN",
+                       refresh_token="YOUR_REFRESH_TOKEN",
+                       access_token="YOUR_ACCESS_TOKEN")
+devices = sf.devices.get_litterboxes(client)
+
+litterbox = devices[0]
+print(litterbox.get_schedule())
+
+```
+
+# rake the litterbox
+```python
+import petsafe as sf
+
+client = sf.PetSafeClient(email="email@example.com",
+                       id_token="YOUR_ID_TOKEN",
+                       refresh_token="YOUR_REFRESH_TOKEN",
+                       access_token="YOUR_ACCESS_TOKEN")
+devices = sf.devices.get_litterboxes(client)
+
+litterbox = devices[0]
+litterbox.rake()
+
+```
+
+# modify the litterbox rake timer
+```python
+import petsafe as sf
+
+client = sf.PetSafeClient(email="email@example.com",
+                       id_token="YOUR_ID_TOKEN",
+                       refresh_token="YOUR_REFRESH_TOKEN",
+                       access_token="YOUR_ACCESS_TOKEN")
+devices = sf.devices.get_litterboxes(client)
+
+litterbox = devices[0]
+litterbox.modify_timer(15)
+
+```
+
+# reset the litterbox rake count
+```python
+import petsafe as sf
+
+client = sf.PetSafeClient(email="email@example.com",
+                       id_token="YOUR_ID_TOKEN",
+                       refresh_token="YOUR_REFRESH_TOKEN",
+                       access_token="YOUR_ACCESS_TOKEN")
+devices = sf.devices.get_litterboxes(client)
+
+litterbox = devices[0]
+litterbox.reset()
 
 ```
 

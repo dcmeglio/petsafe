@@ -1,11 +1,11 @@
 import sys
 import argparse
 
-from petsafe_smartfeed import PetSafeClient
+from petsafe import PetSafeClient
 
 # create parser for arguments
 parser = argparse.ArgumentParser(
-    usage="python -m petsafe_smartfeed email [-t email_code]"
+    usage="python -m petsafe email [-t email_code]"
 )
 parser.add_argument("email", help="account email address")
 

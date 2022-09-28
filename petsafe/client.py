@@ -4,7 +4,7 @@ import time
 import boto3
 import requests
 
-URL_SF_API = "https://platform.cloud.petsafe.net/smart-feed/"
+URL_SF_API = "https://platform.cloud.petsafe.net/"
 PETSAFE_CLIENT_ID = "18hpp04puqmgf5nc6o474lcp2g"
 PETSAFE_REGION = "us-east-1"
 
@@ -19,7 +19,7 @@ class PetSafeClient:
         self.email = email
         self.session = session
         self.username = None
-        self.token_expires_time = None
+        self.token_expires_time = 0
         self.challenge_name = None
         self.client = boto3.client("cognito-idp", region_name=PETSAFE_REGION)
 
@@ -36,8 +36,8 @@ class PetSafeClient:
         if self.id_token is None:
             raise Exception("Not authorized! Have you requested a token?")
 
-        if time.time() >= self.token_expires_time - 10:
-            self.refresh_tokens()
+      #  if time.time() >= self.token_expires_time - 10:
+       #     self.refresh_tokens()
 
         headers["Authorization"] = self.id_token
 
@@ -111,7 +111,7 @@ class PetSafeClient:
 
     def api_post(self, path="", data=None):
         """
-        Sends a POST to PetSafe SmartFeed API.
+        Sends a POST to PetSafe API.
 
         Example: api_post(path=feeder.api_path + 'meals', data=food_data)
 
@@ -124,7 +124,7 @@ class PetSafeClient:
 
     def api_get(self, path=""):
         """
-        Sends a GET to PetSafe SmartFeed API.
+        Sends a GET to PetSafe API.
 
         Example: api_get(path='feeders')
 
@@ -136,7 +136,7 @@ class PetSafeClient:
 
     def api_put(self, path="", data=None):
         """
-        Sends a PUT to PetSafe SmartFeed API.
+        Sends a PUT to PetSafe API.
 
         Example: api_put(path='feeders', data=my_data)
 
@@ -146,3 +146,16 @@ class PetSafeClient:
 
         """
         return requests.put(URL_SF_API + path, headers=self.headers, json=data)
+
+    def api_patch(self, path="", data=None):
+        """
+        Sends a PATCH to PetSafe API.
+
+        Example: api_patch(path='feeders', data=my_data)
+
+        :param path: the path on the API
+        :param data: the PATCH data
+        :return: the request response
+
+        """
+        return requests.patch(URL_SF_API + path, headers=self.headers, json=data)
