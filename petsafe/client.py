@@ -36,8 +36,8 @@ class PetSafeClient:
         if self.id_token is None:
             raise Exception("Not authorized! Have you requested a token?")
 
-      #  if time.time() >= self.token_expires_time - 10:
-       #     self.refresh_tokens()
+        if time.time() >= self.token_expires_time - 10:
+            self.refresh_tokens()
 
         headers["Authorization"] = self.id_token
 
@@ -103,7 +103,8 @@ class PetSafeClient:
 
         self.id_token = response["AuthenticationResult"]["IdToken"]
         self.access_token = response["AuthenticationResult"]["AccessToken"]
-        self.refresh_token = response["AuthenticationResult"]["RefreshToken"]
+        if "RefreshToken" in response["AuthenticationResult"]:
+            self.refresh_token = response["AuthenticationResult"]["RefreshToken"]
         self.token_expires_time = (
                 time.time() + response["AuthenticationResult"]["ExpiresIn"]
         )

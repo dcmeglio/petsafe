@@ -2,5 +2,5 @@
 build/*
 dist/*
 *.pyc
-petsafe_smartfeed_techzune.egg-info/*
+petsafe.egg-info/*
 token.txt
