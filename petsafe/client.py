@@ -77,6 +77,8 @@ class PetSafeClient:
                 "USERNAME": self.username,
             },
         )
+        if not "AuthenticationResult" in response:
+            raise InvalidCodeException("Invalid confirmation code")
         self.id_token = response["AuthenticationResult"]["IdToken"]
         self.access_token = response["AuthenticationResult"]["AccessToken"]
         self.refresh_token = response["AuthenticationResult"]["RefreshToken"]
@@ -160,3 +162,6 @@ class PetSafeClient:
 
         """
         return requests.patch(URL_SF_API + path, headers=self.headers, json=data)
+
+class InvalidCodeException(Exception):
+    pass
