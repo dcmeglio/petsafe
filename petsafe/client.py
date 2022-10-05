@@ -163,5 +163,18 @@ class PetSafeClient:
         """
         return requests.patch(URL_SF_API + path, headers=self.headers, json=data)
 
+    def api_delete(self, path=""):
+        """
+        Sends a DELETE to PetSafe API.
+
+        Example: api_delete(path='feeders')
+
+        :param path: the path on the API
+        :param data: the PATCH data
+        :return: the request response
+
+        """
+        return requests.delete(URL_SF_API + path, headers=self.headers)
+
 class InvalidCodeException(Exception):
     pass
