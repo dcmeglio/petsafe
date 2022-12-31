@@ -1,32 +1,6 @@
 import json
 
 
-def get_feeders(client):
-    """
-    Sends a request to PetSafe's API for all feeders associated with account.
-
-    :param client: PetSafeClient with authorization tokens
-    :return: list of Feeders
-
-    """
-    response = client.api_get("smart-feed/feeders")
-    response.raise_for_status()
-    content = response.content.decode("UTF-8")
-    return [DeviceSmartFeed(client, feeder_data) for feeder_data in json.loads(content)]
-
-def get_litterboxes(client):
-    """
-    Sends a request to PetSafe's API for all litterboxes associated with account.
-
-    :param client: PetSafeClient with authorization tokens
-    :return: list of Scoopfree litterboxes
-
-    """
-    response = client.api_get("scoopfree/product/product")
-    response.raise_for_status()
-    content = response.content.decode("UTF-8")
-    return [DeviceScoopfree(client, litterbox_data) for litterbox_data in json.loads(content)["data"]]   
-
 class DeviceSmartFeed:
     def __init__(self, client, data):
         """
@@ -48,16 +22,16 @@ class DeviceSmartFeed:
         """
         return json.dumps(self.data, indent=2)
 
-    def update_data(self):
+    async def update_data(self):
         """
         Updates self.data to the feeder's current online state.
 
         """
-        response = self.client.api_get(self.api_path)
+        response = await self.client.api_get(self.api_path)
         response.raise_for_status()
         self.data = json.loads(response.content.decode("UTF-8"))
 
-    def put_setting(self, setting, value, force_update=False):
+    async def put_setting(self, setting, value, force_update=False):
         """
         Changes the value of a specified setting. Sends PUT to API.
 
@@ -66,17 +40,17 @@ class DeviceSmartFeed:
         :param force_update: if True, update ALL data after PUT. Defaults to False.
 
         """
-        response = self.client.api_put(
+        response = await self.client.api_put(
             self.api_path + "settings/" + setting, data={"value": value}
         )
         response.raise_for_status()
 
         if force_update:
-            self.update_data()
+            await self.update_data()
         else:
             self.data["settings"][setting] = value
 
-    def get_messages_since(self, days=7):
+    async def get_messages_since(self, days=7):
         """
         Requests all feeder messages.
 
@@ -84,24 +58,26 @@ class DeviceSmartFeed:
         :return: the APIs response in JSON.
 
         """
-        response = self.client.api_get(self.api_path + "messages?days=" + str(days))
+        response = await self.client.api_get(
+            self.api_path + "messages?days=" + str(days)
+        )
         response.raise_for_status()
         return json.loads(response.content.decode("UTF-8"))
 
-    def get_last_feeding(self):
+    async def get_last_feeding(self):
         """
         Finds the last feeding in the feeder's messages.
 
         :return: the feeding message, if found. Otherwise, None.
 
         """
-        messages = self.get_messages_since()
+        messages = await self.get_messages_since()
         for message in messages:
             if message["message_type"] == "FEED_DONE":
                 return message
         return None
 
-    def feed(self, amount=1, slow_feed=None, update_data=True):
+    async def feed(self, amount=1, slow_feed=None, update_data=True):
         """
         Triggers the feeder to begin feeding.
 
@@ -112,41 +88,41 @@ class DeviceSmartFeed:
         """
         if slow_feed is None:
             slow_feed = self.data["settings"]["slow_feed"]
-        response = self.client.api_post(
+        response = await self.client.api_post(
             self.api_path + "meals", data={"amount": amount, "slow_feed": slow_feed}
         )
         response.raise_for_status()
 
         if update_data:
-            self.update_data()
+            await self.update_data()
 
-    def repeat_feed(self):
+    async def repeat_feed(self):
         """
         Repeats the last feeding.
 
         """
-        last_feeding = self.get_last_feeding()
-        self.feed(last_feeding["amount"])
+        last_feeding = await self.get_last_feeding()
+        await self.feed(last_feeding["amount"])
 
-    def prime(self):
+    async def prime(self):
         """
         Feeds 5/8 cups to prime the feeder.
 
         """
-        self.feed(5, False)
+        await self.feed(5, False)
 
-    def get_schedules(self):
+    async def get_schedules(self):
         """
         Requests all feeding schedules.
 
         :return: the APIs response in JSON.
 
         """
-        response = self.client.api_get(self.api_path + "schedules")
+        response = await self.client.api_get(self.api_path + "schedules")
         response.raise_for_status()
         return json.loads(response.content.decode("UTF-8"))
 
-    def schedule_feed(self, time="00:00", amount=1, update_data=True):
+    async def schedule_feed(self, time="00:00", amount=1, update_data=True):
         """
         Adds time and feed amount to schedule.
 
@@ -156,17 +132,19 @@ class DeviceSmartFeed:
         :return: the unique id of the scheduled feed in json
 
         """
-        response = self.client.api_post(
+        response = await self.client.api_post(
             self.api_path + "schedules", data={"time": time, "amount": amount}
         )
         response.raise_for_status()
 
         if update_data:
-            self.update_data()
+            await self.update_data()
 
         return json.loads(response.content.decode("UTF-8"))
 
-    def modify_schedule(self, time="00:00", amount=1, schedule_id="", update_data=True):
+    async def modify_schedule(
+        self, time="00:00", amount=1, schedule_id="", update_data=True
+    ):
         """
         Modifies the specified schedule.
 
@@ -176,16 +154,16 @@ class DeviceSmartFeed:
         :param update_data: if True, will update the feeder's data after feeding. Defaults to True.
 
         """
-        response = self.client.api_put(
+        response = await self.client.api_put(
             self.api_path + "schedules/" + schedule_id,
             data={"time": time, "amount": amount},
         )
         response.raise_for_status()
 
         if update_data:
-            self.update_data()
+            await self.update_data()
 
-    def delete_schedule(self, schedule_id="", update_data=True):
+    async def delete_schedule(self, schedule_id="", update_data=True):
         """
         Deletes specified schedule.
 
@@ -193,41 +171,41 @@ class DeviceSmartFeed:
         :param update_data: if True, will update the feeder's data after feeding. Defaults to True.
 
         """
-        response = self.client.sf_delete(
-            self.api_path + "schedules/" + schedule_id, self.client
+        response = await self.client.api_delete(
+            self.api_path + "schedules/" + schedule_id
         )
         response.raise_for_status()
 
         if update_data:
-            self.update_data()
+            await self.update_data()
 
-    def delete_all_schedules(self, update_data=True):
+    async def delete_all_schedules(self, update_data=True):
         """
         Deletes all schedules.
 
         :param update_data: if True, will update the feeder's data after feeding. Defaults to True.
 
         """
-        response = self.client.sf_delete(self.api_path + "schedules", self.client)
+        response = await self.client.api_delete(self.api_path + "schedules")
         response.raise_for_status()
 
         if update_data:
-            self.update_data()
+            await self.update_data()
 
-    def pause_schedules(self, value, update_data=True):
+    async def pause_schedules(self, value, update_data=True):
         """
         Pauses all schedules.
 
         :param update_data: if True, will update the feeder's data after feeding. Defaults to True.
 
         """
-        response = self.client.api_put(
+        response = await self.client.api_put(
             self.api_path + "settings/paused", data={"value": value}
         )
         response.raise_for_status()
 
         if update_data:
-            self.update_data()
+            await self.update_data()
 
     @property
     def api_name(self):
@@ -331,6 +309,7 @@ class DeviceSmartFeed:
         """
         return int(self.data["is_food_low"])
 
+
 class DeviceScoopfree:
     def __init__(self, client, data):
         """
@@ -352,72 +331,70 @@ class DeviceScoopfree:
         """
         return json.dumps(self.data, indent=2)
 
-    def update_data(self):
+    async def update_data(self):
         """
         Updates self.data to the litterbox's current online state.
         """
-        response = self.client.api_get(self.api_path)
+        response = await self.client.api_get(self.api_path)
         response.raise_for_status()
         self.data = json.loads(response.content.decode("UTF-8"))
 
-    def rake(self, update_data=True):
+    async def rake(self, update_data=True):
         """
         Triggers the rake to begin raking.
         :param update_data: if True, will update the litterbox's data after raking. Defaults to True.
         """
-        response = self.client.api_post(
-            self.api_path + "rake-now", data={}
-        )
+        response = await self.client.api_post(self.api_path + "rake-now", data={})
         response.raise_for_status()
 
         if update_data:
-            self.update_data()
+            await self.update_data()
             return self.data["data"]
 
-    def reset(self, rakeCount=0, update_data=True):
+    async def reset(self, rakeCount=0, update_data=True):
         """
         Resets the rake count to the specified value.
         :param rakeCount: the value to set the rake count to.
         :param update_data: if True, will update the litterbox's data after feeding. Defaults to True.
         """
-        response = self.client.api_patch(
+        response = await self.client.api_patch(
             self.api_path + "shadow",
             data={"rakeCount": rakeCount},
         )
         response.raise_for_status()
 
         if update_data:
-            self.update_data()
+            await self.update_data()
             return self.data["data"]
 
-    def modify_timer(self, rakeDelayTime=15, update_data=True):
+    async def modify_timer(self, rakeDelayTime=15, update_data=True):
         """
         Modifies the rake timer.
         :param rakeDelayTime: The amount of time for the rake delay in minutes.
         :param update_data: if True, will update the litterbox's data after feeding. Defaults to True.
         """
-        response = self.client.api_patch(
+        response = await self.client.api_patch(
             self.api_path + "shadow",
             data={"rakeDelayTime": rakeDelayTime},
         )
         response.raise_for_status()
 
         if update_data:
-            self.update_data()
+            await self.update_data()
             return self.data["data"]
 
-    def get_activity(self):
+    async def get_activity(self):
         """
         Requests all litterbox ativity.
 
         :return: the APIs response in JSON.
 
         """
-        response = self.client.api_get(self.api_path + "activity")
+        response = await self.client.api_get(self.api_path + "activity")
         response.raise_for_status()
         return json.loads(response.content.decode("UTF-8"))
 
-    def patch_setting(self, setting, value, force_update=False):
+    async def patch_setting(self, setting, value, force_update=False):
         """
         Changes the value of a specified setting. Sends PATCH to API.
 
@@ -426,13 +403,13 @@ class DeviceScoopfree:
         :param force_update: if True, update ALL data after PATCH. Defaults to False.
 
         """
-        response = self.client.api_patch(
+        response = await self.client.api_patch(
             self.api_path + "settings", data={setting: value}
         )
         response.raise_for_status()
 
         if force_update:
-            self.update_data()
+            await self.update_data()
         else:
             self.data[setting] = value
 
