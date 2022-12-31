@@ -207,6 +207,22 @@ class DeviceSmartFeed:
         if update_data:
             await self.update_data()
 
+    async def pause(self, value=True):
+        """
+        Sets or unsets the pause feeding value
+        """
+        return await self.put_setting("paused", value)
+
+    async def lock(self, value=True):
+        """
+        Sets or unsets the button lock value.
+        """
+        return await self.put_setting("child_lock", value)
+
+    async def slow_feed(self, value=True):
+        """Sets or unsets the slow feed setting."""
+        self.put_setting("slow_feed", value)
+
     @property
     def api_name(self):
         """The feeder's thing_name from the API."""
@@ -250,49 +266,29 @@ class DeviceSmartFeed:
         )
 
     @property
-    def paused(self):
+    def is_paused(self):
         """If true, the feeder will not follow its scheduling."""
         return self.data["settings"]["paused"]
 
-    @paused.setter
-    def paused(self, value):
-        self.put_setting("paused", value)
-
     @property
-    def slow_feed(self):
+    def is_slow_feed(self):
         """If true, the feeder will dispense food slowly."""
         return self.data["settings"]["slow_feed"]
 
-    @slow_feed.setter
-    def slow_feed(self, value):
-        self.put_setting("slow_feed", value)
-
     @property
-    def child_lock(self):
+    def is_locked(self):
         """If true, the feeder's physical button is disabled."""
         return self.data["settings"]["child_lock"]
-
-    @child_lock.setter
-    def child_lock(self, value):
-        self.put_setting("child_lock", value)
 
     @property
     def friendly_name(self):
         """The feeder's display name."""
         return self.data["settings"]["friendly_name"]
 
-    @friendly_name.setter
-    def friendly_name(self, value):
-        self.put_setting("friendly_name", value)
-
     @property
     def pet_type(self):
         """The feeder's pet type."""
         return self.data["settings"]["pet_type"]
-
-    @pet_type.setter
-    def pet_type(self, value):
-        self.put_setting("pet_type", value)
 
     @property
     def food_sensor_current(self):
@@ -308,6 +304,16 @@ class DeviceSmartFeed:
 
         """
         return int(self.data["is_food_low"])
+
+    @property
+    def firmware(self):
+        """The feeder's firmware."""
+        return self.data["firmware_version"]
+
+    @property
+    def product_name(self):
+        """The feeder's product name."""
+        return self.data["product_name"]
 
 
 class DeviceScoopfree:
@@ -428,6 +434,12 @@ class DeviceScoopfree:
         """The litterbox's display name."""
         return self.data["friendlyName"]
 
-    @friendly_name.setter
-    def friendly_name(self, value):
-        self.patch_setting("friendlyName", value)
+    @property
+    def firmware(self):
+        """The litterbox firmware."""
+        return self.data["shadow"]["state"]["reported"]["firmware"]
+
+    @property
+    def product_name(self):
+        """The litterbox product name."""
+        return self.data["productName"]
