@@ -221,7 +221,7 @@ class DeviceSmartFeed:
 
     async def slow_feed(self, value=True):
         """Sets or unsets the slow feed setting."""
-        self.put_setting("slow_feed", value)
+        return await self.put_setting("slow_feed", value)
 
     @property
     def api_name(self):
