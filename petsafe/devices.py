@@ -12,17 +12,17 @@ class DeviceSmartFeed:
         self.client = client
         self.data = data
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.to_json()
 
-    def to_json(self):
+    def to_json(self) -> str:
         """
         All feeder data formatted as JSON.
 
         """
         return json.dumps(self.data, indent=2)
 
-    async def update_data(self):
+    async def update_data(self) -> None:
         """
         Updates self.data to the feeder's current online state.
 
@@ -31,7 +31,9 @@ class DeviceSmartFeed:
         response.raise_for_status()
         self.data = json.loads(response.content.decode("UTF-8"))
 
-    async def put_setting(self, setting: str, value, force_update: bool = False):
+    async def put_setting(
+        self, setting: str, value, force_update: bool = False
+    ) -> None:
         """
         Changes the value of a specified setting. Sends PUT to API.
 
@@ -79,7 +81,7 @@ class DeviceSmartFeed:
 
     async def feed(
         self, amount: int = 1, slow_feed: bool = None, update_data: bool = True
-    ):
+    ) -> None:
         """
         Triggers the feeder to begin feeding.
 
@@ -98,7 +100,7 @@ class DeviceSmartFeed:
         if update_data:
             await self.update_data()
 
-    async def repeat_feed(self):
+    async def repeat_feed(self) -> None:
         """
         Repeats the last feeding.
 
@@ -106,7 +108,7 @@ class DeviceSmartFeed:
         last_feeding = await self.get_last_feeding()
         await self.feed(last_feeding["amount"])
 
-    async def prime(self):
+    async def prime(self) -> None:
         """
         Feeds 5/8 cups to prime the feeder.
 
@@ -152,7 +154,7 @@ class DeviceSmartFeed:
         amount: int = 1,
         schedule_id: str = "",
         update_data: bool = True,
-    ):
+    ) -> None:
         """
         Modifies the specified schedule.
 
@@ -171,7 +173,9 @@ class DeviceSmartFeed:
         if update_data:
             await self.update_data()
 
-    async def delete_schedule(self, schedule_id: str = "", update_data: bool = True):
+    async def delete_schedule(
+        self, schedule_id: str = "", update_data: bool = True
+    ) -> None:
         """
         Deletes specified schedule.
 
@@ -187,7 +191,7 @@ class DeviceSmartFeed:
         if update_data:
             await self.update_data()
 
-    async def delete_all_schedules(self, update_data: bool = True):
+    async def delete_all_schedules(self, update_data: bool = True) -> None:
         """
         Deletes all schedules.
 
@@ -200,7 +204,7 @@ class DeviceSmartFeed:
         if update_data:
             await self.update_data()
 
-    async def pause_schedules(self, value: bool, update_data: bool = True):
+    async def pause_schedules(self, value: bool, update_data: bool = True) -> None:
         """
         Pauses all schedules.
 
@@ -215,39 +219,39 @@ class DeviceSmartFeed:
         if update_data:
             await self.update_data()
 
-    async def pause(self, value: bool = True):
+    async def pause(self, value: bool = True) -> None:
         """
         Sets or unsets the pause feeding value
         """
-        return await self.put_setting("paused", value)
+        await self.put_setting("paused", value)
 
-    async def lock(self, value: bool = True):
+    async def lock(self, value: bool = True) -> None:
         """
         Sets or unsets the button lock value.
         """
-        return await self.put_setting("child_lock", value)
+        await self.put_setting("child_lock", value)
 
-    async def slow_feed(self, value: bool = True):
+    async def slow_feed(self, value: bool = True) -> None:
         """Sets or unsets the slow feed setting."""
-        return await self.put_setting("slow_feed", value)
+        await self.put_setting("slow_feed", value)
 
     @property
-    def api_name(self):
+    def api_name(self) -> str:
         """The feeder's thing_name from the API."""
         return self.data["thing_name"]
 
     @property
-    def api_path(self):
+    def api_path(self) -> str:
         """The feeder's path on the API."""
         return "smart-feed/feeders/" + self.api_name + "/"
 
     @property
-    def id(self):
+    def id(self) -> str:
         """The feeder's ID."""
         return self.data["id"]
 
     @property
-    def battery_voltage(self):
+    def battery_voltage(self) -> float:
         """The feeder's calculated current battery voltage."""
         try:
             return round(int(self.data["battery_voltage"]) / 32767 * 7.2, 3)
@@ -255,7 +259,7 @@ class DeviceSmartFeed:
             return -1
 
     @property
-    def battery_level(self):
+    def battery_level(self) -> int:
         """
         The feeder's current battery level on a scale of 0-100.
         Returns 0 if no batteries installed.
@@ -274,37 +278,37 @@ class DeviceSmartFeed:
         )
 
     @property
-    def is_paused(self):
+    def is_paused(self) -> bool:
         """If true, the feeder will not follow its scheduling."""
         return self.data["settings"]["paused"]
 
     @property
-    def is_slow_feed(self):
+    def is_slow_feed(self) -> bool:
         """If true, the feeder will dispense food slowly."""
         return self.data["settings"]["slow_feed"]
 
     @property
-    def is_locked(self):
+    def is_locked(self) -> bool:
         """If true, the feeder's physical button is disabled."""
         return self.data["settings"]["child_lock"]
 
     @property
-    def friendly_name(self):
+    def friendly_name(self) -> str:
         """The feeder's display name."""
         return self.data["settings"]["friendly_name"]
 
     @property
-    def pet_type(self):
+    def pet_type(self) -> str:
         """The feeder's pet type."""
         return self.data["settings"]["pet_type"]
 
     @property
-    def food_sensor_current(self):
+    def food_sensor_current(self) -> str:
         """The feeder's food sensor status."""
         return self.data["food_sensor_current"]
 
     @property
-    def food_low_status(self):
+    def food_low_status(self) -> int:
         """
         The feeder's food low status.
 
@@ -314,12 +318,12 @@ class DeviceSmartFeed:
         return int(self.data["is_food_low"])
 
     @property
-    def firmware(self):
+    def firmware(self) -> str:
         """The feeder's firmware."""
         return self.data["firmware_version"]
 
     @property
-    def product_name(self):
+    def product_name(self) -> str:
         """The feeder's product name."""
         return self.data["product_name"]
 
@@ -335,17 +339,17 @@ class DeviceScoopfree:
         self.client = client
         self.data = data
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.to_json()
 
-    def to_json(self):
+    def to_json(self) -> str:
         """
         All litterbox data formatted as JSON.
 
         """
         return json.dumps(self.data, indent=2)
 
-    async def update_data(self):
+    async def update_data(self) -> None:
         """
         Updates self.data to the litterbox's current online state.
         """
@@ -408,7 +412,9 @@ class DeviceScoopfree:
         response.raise_for_status()
         return json.loads(response.content.decode("UTF-8"))
 
-    async def patch_setting(self, setting: str, value, force_update: bool = False):
+    async def patch_setting(
+        self, setting: str, value, force_update: bool = False
+    ) -> None:
         """
         Changes the value of a specified setting. Sends PATCH to API.
 
@@ -428,26 +434,26 @@ class DeviceScoopfree:
             self.data[setting] = value
 
     @property
-    def api_name(self):
+    def api_name(self) -> str:
         """The litterbox's thingName from the API."""
         return self.data["thingName"]
 
     @property
-    def api_path(self):
+    def api_path(self) -> str:
         """The litterbox's path on the API."""
         return "scoopfree/product/product/" + self.api_name + "/"
 
     @property
-    def friendly_name(self):
+    def friendly_name(self) -> str:
         """The litterbox's display name."""
         return self.data["friendlyName"]
 
     @property
-    def firmware(self):
+    def firmware(self) -> str:
         """The litterbox firmware."""
         return self.data["shadow"]["state"]["reported"]["firmware"]
 
     @property
-    def product_name(self):
+    def product_name(self) -> str:
         """The litterbox product name."""
         return self.data["productName"]

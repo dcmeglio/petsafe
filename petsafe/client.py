@@ -31,7 +31,7 @@ class PetSafeClient:
         self._token_expires_time = 0
         self._challenge_name = None
 
-    async def get_feeders(self):
+    async def get_feeders(self) -> list[DeviceSmartFeed]:
         """
         Sends a request to PetSafe's API for all feeders associated with account.
 
@@ -45,7 +45,7 @@ class PetSafeClient:
             DeviceSmartFeed(self, feeder_data) for feeder_data in json.loads(content)
         ]
 
-    async def get_litterboxes(self):
+    async def get_litterboxes(self) -> list[DeviceScoopfree]:
         """
         Sends a request to PetSafe's API for all litterboxes associated with account.
 
@@ -60,7 +60,7 @@ class PetSafeClient:
             for litterbox_data in json.loads(content)["data"]
         ]
 
-    async def request_code(self):
+    async def request_code(self) -> None:
         """
         Requests an email code from PetSafe authentication.
 
@@ -89,7 +89,7 @@ class PetSafeClient:
             except idp.exceptions.UserNotFoundException as ex:
                 raise InvalidUserException() from ex
 
-    async def request_tokens_from_code(self, code: str):
+    async def request_tokens_from_code(self, code: str) -> None:
         """
         Requests tokens from PetSafe API using emailed code.
 
@@ -120,9 +120,8 @@ class PetSafeClient:
             self._token_expires_time = (
                 time.time() + response["AuthenticationResult"]["ExpiresIn"]
             )
-            return response
 
-    async def refresh_tokens(self):
+    async def __refresh_tokens(self) -> None:
         """
         Refreshes tokens with PetSafe.
 
@@ -151,7 +150,6 @@ class PetSafeClient:
             self.token_expires_time = (
                 time.time() + response["AuthenticationResult"]["ExpiresIn"]
             )
-            return response
 
     async def api_post(self, path: str = "", data: dict = None):
         """
@@ -241,7 +239,7 @@ class PetSafeClient:
         response.raise_for_status()
         return response
 
-    async def __get_headers(self):
+    async def __get_headers(self) -> dict:
         """
         Creates a dict of headers with JSON content-type and token.
 
@@ -254,7 +252,7 @@ class PetSafeClient:
             raise Exception("Not authorized! Have you requested a token?")
 
         if time.time() >= self._token_expires_time - 100:
-            await self.refresh_tokens()
+            await self.__refresh_tokens()
 
         headers["Authorization"] = self._id_token
 
