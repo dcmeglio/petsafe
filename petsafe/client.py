@@ -15,12 +15,17 @@ from .const import PETSAFE_API_BASE, PETSAFE_CLIENT_ID, PETSAFE_REGION
 
 class PetSafeClient:
     def __init__(
-        self, email, id_token=None, refresh_token=None, access_token=None, session=None
+        self,
+        email: str,
+        id_token: str = None,
+        refresh_token: str = None,
+        access_token: str = None,
+        session: str = None,
     ):
-        self.id_token = id_token
-        self.refresh_token = refresh_token
-        self.access_token = access_token
-        self.email = email
+        self._id_token = id_token
+        self._refresh_token = refresh_token
+        self._access_token = access_token
+        self._email = email
         self._session = session
         self._username = None
         self._token_expires_time = 0
@@ -73,7 +78,7 @@ class PetSafeClient:
                     AuthFlow="CUSTOM_AUTH",
                     ClientId=PETSAFE_CLIENT_ID,
                     AuthParameters={
-                        "USERNAME": self.email,
+                        "USERNAME": self._email,
                         "AuthFlow": "CUSTOM_CHALLENGE",
                     },
                 )
@@ -84,7 +89,7 @@ class PetSafeClient:
             except idp.exceptions.UserNotFoundException as ex:
                 raise InvalidUserException() from ex
 
-    async def request_tokens_from_code(self, code):
+    async def request_tokens_from_code(self, code: str):
         """
         Requests tokens from PetSafe API using emailed code.
 
@@ -109,9 +114,9 @@ class PetSafeClient:
             )
             if not "AuthenticationResult" in response:
                 raise InvalidCodeException("Invalid confirmation code")
-            self.id_token = response["AuthenticationResult"]["IdToken"]
-            self.access_token = response["AuthenticationResult"]["AccessToken"]
-            self.refresh_token = response["AuthenticationResult"]["RefreshToken"]
+            self._id_token = response["AuthenticationResult"]["IdToken"]
+            self._access_token = response["AuthenticationResult"]["AccessToken"]
+            self._refresh_token = response["AuthenticationResult"]["RefreshToken"]
             self._token_expires_time = (
                 time.time() + response["AuthenticationResult"]["ExpiresIn"]
             )
@@ -132,23 +137,23 @@ class PetSafeClient:
         ) as idp:
             response = await idp.initiate_auth(
                 AuthFlow="REFRESH_TOKEN_AUTH",
-                AuthParameters={"REFRESH_TOKEN": self.refresh_token},
+                AuthParameters={"REFRESH_TOKEN": self._refresh_token},
                 ClientId=PETSAFE_CLIENT_ID,
             )
 
             if "Session" in response:
                 self._session = response["Session"]
 
-            self.id_token = response["AuthenticationResult"]["IdToken"]
-            self.access_token = response["AuthenticationResult"]["AccessToken"]
+            self._id_token = response["AuthenticationResult"]["IdToken"]
+            self._access_token = response["AuthenticationResult"]["AccessToken"]
             if "RefreshToken" in response["AuthenticationResult"]:
-                self.refresh_token = response["AuthenticationResult"]["RefreshToken"]
+                self._refresh_token = response["AuthenticationResult"]["RefreshToken"]
             self.token_expires_time = (
                 time.time() + response["AuthenticationResult"]["ExpiresIn"]
             )
             return response
 
-    async def api_post(self, path="", data=None):
+    async def api_post(self, path: str = "", data: dict = None):
         """
         Sends a POST to PetSafe API.
 
@@ -167,7 +172,7 @@ class PetSafeClient:
         response.raise_for_status()
         return response
 
-    async def api_get(self, path=""):
+    async def api_get(self, path: str = ""):
         """
         Sends a GET to PetSafe API.
 
@@ -183,7 +188,7 @@ class PetSafeClient:
         response.raise_for_status()
         return response
 
-    async def api_put(self, path="", data=None):
+    async def api_put(self, path: str = "", data: dict = None):
         """
         Sends a PUT to PetSafe API.
 
@@ -200,7 +205,7 @@ class PetSafeClient:
         response.raise_for_status()
         return response
 
-    async def api_patch(self, path="", data=None):
+    async def api_patch(self, path: str = "", data: dict = None):
         """
         Sends a PATCH to PetSafe API.
 
@@ -219,7 +224,7 @@ class PetSafeClient:
         response.raise_for_status()
         return response
 
-    async def api_delete(self, path=""):
+    async def api_delete(self, path: str = ""):
         """
         Sends a DELETE to PetSafe API.
 
@@ -245,13 +250,13 @@ class PetSafeClient:
         """
         headers = {"Content-Type": "application/json"}
 
-        if self.id_token is None:
+        if self._id_token is None:
             raise Exception("Not authorized! Have you requested a token?")
 
         if time.time() >= self._token_expires_time - 100:
             await self.refresh_tokens()
 
-        headers["Authorization"] = self.id_token
+        headers["Authorization"] = self._id_token
 
         return headers
 

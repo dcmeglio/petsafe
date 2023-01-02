@@ -2,7 +2,7 @@ import json
 
 
 class DeviceSmartFeed:
-    def __init__(self, client, data):
+    def __init__(self, client, data: dict):
         """
         PetSafe SmartFeed device.
 
@@ -31,7 +31,7 @@ class DeviceSmartFeed:
         response.raise_for_status()
         self.data = json.loads(response.content.decode("UTF-8"))
 
-    async def put_setting(self, setting, value, force_update=False):
+    async def put_setting(self, setting: str, value, force_update: bool = False):
         """
         Changes the value of a specified setting. Sends PUT to API.
 
@@ -50,7 +50,7 @@ class DeviceSmartFeed:
         else:
             self.data["settings"][setting] = value
 
-    async def get_messages_since(self, days=7):
+    async def get_messages_since(self, days: int = 7):
         """
         Requests all feeder messages.
 
@@ -77,7 +77,9 @@ class DeviceSmartFeed:
                 return message
         return None
 
-    async def feed(self, amount=1, slow_feed=None, update_data=True):
+    async def feed(
+        self, amount: int = 1, slow_feed: bool = None, update_data: bool = True
+    ):
         """
         Triggers the feeder to begin feeding.
 
@@ -122,7 +124,9 @@ class DeviceSmartFeed:
         response.raise_for_status()
         return json.loads(response.content.decode("UTF-8"))
 
-    async def schedule_feed(self, time="00:00", amount=1, update_data=True):
+    async def schedule_feed(
+        self, time: str = "00:00", amount: int = 1, update_data: bool = True
+    ):
         """
         Adds time and feed amount to schedule.
 
@@ -143,7 +147,11 @@ class DeviceSmartFeed:
         return json.loads(response.content.decode("UTF-8"))
 
     async def modify_schedule(
-        self, time="00:00", amount=1, schedule_id="", update_data=True
+        self,
+        time: str = "00:00",
+        amount: int = 1,
+        schedule_id: str = "",
+        update_data: bool = True,
     ):
         """
         Modifies the specified schedule.
@@ -163,7 +171,7 @@ class DeviceSmartFeed:
         if update_data:
             await self.update_data()
 
-    async def delete_schedule(self, schedule_id="", update_data=True):
+    async def delete_schedule(self, schedule_id: str = "", update_data: bool = True):
         """
         Deletes specified schedule.
 
@@ -179,7 +187,7 @@ class DeviceSmartFeed:
         if update_data:
             await self.update_data()
 
-    async def delete_all_schedules(self, update_data=True):
+    async def delete_all_schedules(self, update_data: bool = True):
         """
         Deletes all schedules.
 
@@ -192,7 +200,7 @@ class DeviceSmartFeed:
         if update_data:
             await self.update_data()
 
-    async def pause_schedules(self, value, update_data=True):
+    async def pause_schedules(self, value: bool, update_data: bool = True):
         """
         Pauses all schedules.
 
@@ -207,19 +215,19 @@ class DeviceSmartFeed:
         if update_data:
             await self.update_data()
 
-    async def pause(self, value=True):
+    async def pause(self, value: bool = True):
         """
         Sets or unsets the pause feeding value
         """
         return await self.put_setting("paused", value)
 
-    async def lock(self, value=True):
+    async def lock(self, value: bool = True):
         """
         Sets or unsets the button lock value.
         """
         return await self.put_setting("child_lock", value)
 
-    async def slow_feed(self, value=True):
+    async def slow_feed(self, value: bool = True):
         """Sets or unsets the slow feed setting."""
         return await self.put_setting("slow_feed", value)
 
@@ -345,7 +353,7 @@ class DeviceScoopfree:
         response.raise_for_status()
         self.data = json.loads(response.content.decode("UTF-8"))
 
-    async def rake(self, update_data=True):
+    async def rake(self, update_data: bool = True):
         """
         Triggers the rake to begin raking.
         :param update_data: if True, will update the litterbox's data after raking. Defaults to True.
@@ -357,7 +365,7 @@ class DeviceScoopfree:
             await self.update_data()
             return self.data["data"]
 
-    async def reset(self, rakeCount=0, update_data=True):
+    async def reset(self, rakeCount: int = 0, update_data: bool = True):
         """
         Resets the rake count to the specified value.
         :param rakeCount: the value to set the rake count to.
@@ -373,7 +381,7 @@ class DeviceScoopfree:
             await self.update_data()
             return self.data["data"]
 
-    async def modify_timer(self, rakeDelayTime=15, update_data=True):
+    async def modify_timer(self, rakeDelayTime: int = 15, update_data: bool = True):
         """
         Modifies the rake timer.
         :param rakeDelayTime: The amount of time for the rake delay in minutes.
@@ -400,7 +408,7 @@ class DeviceScoopfree:
         response.raise_for_status()
         return json.loads(response.content.decode("UTF-8"))
 
-    async def patch_setting(self, setting, value, force_update=False):
+    async def patch_setting(self, setting: str, value, force_update: bool = False):
         """
         Changes the value of a specified setting. Sends PATCH to API.
 
