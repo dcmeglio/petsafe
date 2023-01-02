@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="petsafe",
-    version="2.0.1",
+    version="2.0.2",
     author="Jordan Stremming & Dominick Meglio",
     license="MIT",
     author_email="dmeglio@gmail.com",
