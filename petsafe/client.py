@@ -258,6 +258,21 @@ class PetSafeClient:
 
         return headers
 
+    @property
+    def id_token(self) -> str:
+        """Retrieve the id token associated with the connection."""
+        return self._id_token
+
+    @property
+    def access_token(self) -> str:
+        """Retrieve the access token associated with the connection."""
+        return self._access_token
+
+    @property
+    def refresh_token(self) -> str:
+        """Retrieve the refresh token associated with the connection."""
+        return self._refresh_token
+
 
 class InvalidCodeException(Exception):
     pass
