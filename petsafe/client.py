@@ -68,15 +68,21 @@ class PetSafeClient:
             region_name=PETSAFE_REGION,
             config=AioConfig(signature_version=UNSIGNED),
         ) as idp:
-            response = await idp.initiate_auth(
-                AuthFlow="CUSTOM_AUTH",
-                ClientId=PETSAFE_CLIENT_ID,
-                AuthParameters={"USERNAME": self.email, "AuthFlow": "CUSTOM_CHALLENGE"},
-            )
-            self._challenge_name = response["ChallengeName"]
-            self._session = response["Session"]
-            self._username = response["ChallengeParameters"]["USERNAME"]
-            return response
+            try:
+                response = await idp.initiate_auth(
+                    AuthFlow="CUSTOM_AUTH",
+                    ClientId=PETSAFE_CLIENT_ID,
+                    AuthParameters={
+                        "USERNAME": self.email,
+                        "AuthFlow": "CUSTOM_CHALLENGE",
+                    },
+                )
+                self._challenge_name = response["ChallengeName"]
+                self._session = response["Session"]
+                self._username = response["ChallengeParameters"]["USERNAME"]
+                return response
+            except idp.exceptions.UserNotFoundException as ex:
+                raise InvalidUserException() from ex
 
     async def request_tokens_from_code(self, code):
         """
@@ -251,4 +257,8 @@ class PetSafeClient:
 
 
 class InvalidCodeException(Exception):
+    pass
+
+
+class InvalidUserException(Exception):
     pass
