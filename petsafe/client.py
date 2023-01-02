@@ -35,7 +35,6 @@ class PetSafeClient:
 
         """
         response = await self.api_get("smart-feed/feeders")
-        response.raise_for_status()
         content = response.content.decode("UTF-8")
         return [
             DeviceSmartFeed(self, feeder_data) for feeder_data in json.loads(content)
@@ -50,7 +49,6 @@ class PetSafeClient:
 
         """
         response = await self.api_get("scoopfree/product/product")
-        response.raise_for_status()
         content = response.content.decode("UTF-8")
         return [
             DeviceScoopfree(self, litterbox_data)
@@ -157,7 +155,11 @@ class PetSafeClient:
         """
         client = httpx.AsyncClient()
         headers = await self.__get_headers()
-        return await client.post(PETSAFE_API_BASE + path, headers=headers, json=data)
+        response = await client.post(
+            PETSAFE_API_BASE + path, headers=headers, json=data
+        )
+        response.raise_for_status()
+        return response
 
     async def api_get(self, path=""):
         """
@@ -171,7 +173,9 @@ class PetSafeClient:
         """
         headers = await self.__get_headers()
         client = httpx.AsyncClient()
-        return await client.get(PETSAFE_API_BASE + path, headers=headers)
+        response = await client.get(PETSAFE_API_BASE + path, headers=headers)
+        response.raise_for_status()
+        return response
 
     async def api_put(self, path="", data=None):
         """
@@ -186,7 +190,9 @@ class PetSafeClient:
         """
         client = httpx.AsyncClient()
         headers = await self.__get_headers()
-        return await client.put(PETSAFE_API_BASE + path, headers=headers, json=data)
+        response = await client.put(PETSAFE_API_BASE + path, headers=headers, json=data)
+        response.raise_for_status()
+        return response
 
     async def api_patch(self, path="", data=None):
         """
@@ -201,7 +207,11 @@ class PetSafeClient:
         """
         client = httpx.AsyncClient()
         headers = self.__get_headers()
-        return await client.patch(PETSAFE_API_BASE + path, headers=headers, json=data)
+        response = await client.patch(
+            PETSAFE_API_BASE + path, headers=headers, json=data
+        )
+        response.raise_for_status()
+        return response
 
     async def api_delete(self, path=""):
         """
@@ -216,7 +226,9 @@ class PetSafeClient:
         """
         client = httpx.AsyncClient()
         headers = await self.__get_headers()
-        return await client.delete(PETSAFE_API_BASE + path, headers=headers)
+        response = await client.delete(PETSAFE_API_BASE + path, headers=headers)
+        response.raise_for_status()
+        return response
 
     async def __get_headers(self):
         """
