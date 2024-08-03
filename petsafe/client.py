@@ -5,7 +5,7 @@ import time
 from aiobotocore.config import AioConfig
 from aiobotocore.session import get_session
 from botocore import UNSIGNED
-import requests
+import asyncio
 import httpx
 
 from petsafe.devices import DeviceScoopfree, DeviceSmartFeed
@@ -21,6 +21,7 @@ class PetSafeClient:
         refresh_token: str = None,
         access_token: str = None,
         session: str = None,
+        client: httpx.AsyncClient = None,
     ):
         self._id_token = id_token
         self._refresh_token = refresh_token
@@ -30,6 +31,10 @@ class PetSafeClient:
         self._username = None
         self._token_expires_time = 0
         self._challenge_name = None
+        if client is not None:
+            self._client = client
+        else:
+            self._client = httpx.AsyncClient()
 
     async def get_feeders(self) -> list[DeviceSmartFeed]:
         """
@@ -162,9 +167,8 @@ class PetSafeClient:
         :return: the request response
 
         """
-        client = httpx.AsyncClient()
         headers = await self.__get_headers()
-        response = await client.post(
+        response = await self._client.post(
             PETSAFE_API_BASE + path, headers=headers, json=data
         )
         response.raise_for_status()
@@ -181,8 +185,7 @@ class PetSafeClient:
 
         """
         headers = await self.__get_headers()
-        client = httpx.AsyncClient()
-        response = await client.get(PETSAFE_API_BASE + path, headers=headers)
+        response = await self._client.get(PETSAFE_API_BASE + path, headers=headers)
         response.raise_for_status()
         return response
 
@@ -197,9 +200,8 @@ class PetSafeClient:
         :return: the request response
 
         """
-        client = httpx.AsyncClient()
         headers = await self.__get_headers()
-        response = await client.put(PETSAFE_API_BASE + path, headers=headers, json=data)
+        response = await self._client.put(PETSAFE_API_BASE + path, headers=headers, json=data)
         response.raise_for_status()
         return response
 
@@ -214,9 +216,8 @@ class PetSafeClient:
         :return: the request response
 
         """
-        client = httpx.AsyncClient()
         headers = self.__get_headers()
-        response = await client.patch(
+        response = await self._client.patch(
             PETSAFE_API_BASE + path, headers=headers, json=data
         )
         response.raise_for_status()
@@ -233,9 +234,8 @@ class PetSafeClient:
         :return: the request response
 
         """
-        client = httpx.AsyncClient()
         headers = await self.__get_headers()
-        response = await client.delete(PETSAFE_API_BASE + path, headers=headers)
+        response = await self._client.delete(PETSAFE_API_BASE + path, headers=headers)
         response.raise_for_status()
         return response
 
