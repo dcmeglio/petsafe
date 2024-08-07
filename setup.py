@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="petsafe",
-    version="2.0.4",
+    version="2.0.5",
     author="Jordan Stremming & Dominick Meglio",
     license="MIT",
     author_email="dmeglio@gmail.com",
@@ -14,7 +14,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/dcmeglio/petsafe",
     packages=setuptools.find_packages(),
-    install_requires=["httpx", "aiobotocore"],
+    install_requires=["httpx", "botocore"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

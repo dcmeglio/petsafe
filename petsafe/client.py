@@ -2,8 +2,8 @@ import json
 import re
 import time
 
-from aiobotocore.config import AioConfig
-from aiobotocore.session import get_session
+from botocore.config import Config
+from botocore.session import Session, get_session
 from botocore import UNSIGNED
 import asyncio
 import httpx
@@ -35,6 +35,8 @@ class PetSafeClient:
             self._client = client
         else:
             self._client = httpx.AsyncClient()
+        self._cognitoSession = None
+        self._cognitoClient = None
 
     async def get_feeders(self) -> list[DeviceSmartFeed]:
         """
@@ -72,14 +74,12 @@ class PetSafeClient:
         :return: response from PetSafe
 
         """
-        session = get_session()
-        async with session.create_client(
-            "cognito-idp",
-            region_name=PETSAFE_REGION,
-            config=AioConfig(signature_version=UNSIGNED),
-        ) as idp:
-            try:
-                response = await idp.initiate_auth(
+        await self.__get_cognito_session()
+        idp = await self.__get_cognito_client()
+        try:
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(None, lambda: 
+                idp.initiate_auth(
                     AuthFlow="CUSTOM_AUTH",
                     ClientId=PETSAFE_CLIENT_ID,
                     AuthParameters={
@@ -87,12 +87,13 @@ class PetSafeClient:
                         "AuthFlow": "CUSTOM_CHALLENGE",
                     },
                 )
-                self._challenge_name = response["ChallengeName"]
-                self._session = response["Session"]
-                self._username = response["ChallengeParameters"]["USERNAME"]
-                return response
-            except idp.exceptions.UserNotFoundException as ex:
-                raise InvalidUserException() from ex
+            )
+            self._challenge_name = response["ChallengeName"]
+            self._session = response["Session"]
+            self._username = response["ChallengeParameters"]["USERNAME"]
+            return response
+        except idp.exceptions.UserNotFoundException as ex:
+            raise InvalidUserException() from ex
 
     async def request_tokens_from_code(self, code: str) -> None:
         """
@@ -102,13 +103,11 @@ class PetSafeClient:
         :return: response from PetSafe
 
         """
-        session = get_session()
-        async with session.create_client(
-            "cognito-idp",
-            region_name=PETSAFE_REGION,
-            config=AioConfig(signature_version=UNSIGNED),
-        ) as idp:
-            response = await idp.respond_to_auth_challenge(
+        await self.__get_cognito_session()
+        idp = await self.__get_cognito_client()
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(None, lambda: 
+            idp.respond_to_auth_challenge(
                 ClientId=PETSAFE_CLIENT_ID,
                 ChallengeName=self._challenge_name,
                 Session=self._session,
@@ -117,14 +116,43 @@ class PetSafeClient:
                     "USERNAME": self._username,
                 },
             )
-            if not "AuthenticationResult" in response:
-                raise InvalidCodeException("Invalid confirmation code")
-            self._id_token = response["AuthenticationResult"]["IdToken"]
-            self._access_token = response["AuthenticationResult"]["AccessToken"]
-            self._refresh_token = response["AuthenticationResult"]["RefreshToken"]
-            self._token_expires_time = (
-                time.time() + response["AuthenticationResult"]["ExpiresIn"]
-            )
+        )
+        if not "AuthenticationResult" in response:
+            raise InvalidCodeException("Invalid confirmation code")
+        self._id_token = response["AuthenticationResult"]["IdToken"]
+        self._access_token = response["AuthenticationResult"]["AccessToken"]
+        self._refresh_token = response["AuthenticationResult"]["RefreshToken"]
+        self._token_expires_time = (
+            time.time() + response["AuthenticationResult"]["ExpiresIn"]
+        )
+
+    async def __get_cognito_session(self) -> Session:
+        """
+        Retrieve a cognito session from botocore.
+
+        :return: botocore session
+        """
+        if self._cognitoSession is None:
+            loop = asyncio.get_event_loop()
+            self._cognitoSession = await loop.run_in_executor(None, get_session)
+        return self._cognitoSession
+    
+    async def __get_cognito_client(self):
+        """
+        Retrieve a cognito client.
+
+        :return: cognito client
+        """
+        if self._cognitoClient is None:
+            loop = asyncio.get_event_loop()
+            self._cognitoClient = await loop.run_in_executor(None, lambda session:
+                session.create_client(
+                    "cognito-idp",
+                    region_name=PETSAFE_REGION,
+                    config=Config(signature_version=UNSIGNED),
+                )
+        , self._cognitoSession)
+        return self._cognitoClient
 
     async def __refresh_tokens(self) -> None:
         """
@@ -133,28 +161,27 @@ class PetSafeClient:
         :return: the response from PetSafe.
 
         """
-        session = get_session()
-        async with session.create_client(
-            "cognito-idp",
-            region_name=PETSAFE_REGION,
-            config=AioConfig(signature_version=UNSIGNED),
-        ) as idp:
-            response = await idp.initiate_auth(
+        await self.__get_cognito_session()
+        idp = await self.__get_cognito_client()
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(None, lambda:
+            idp.initiate_auth(
                 AuthFlow="REFRESH_TOKEN_AUTH",
                 AuthParameters={"REFRESH_TOKEN": self._refresh_token},
                 ClientId=PETSAFE_CLIENT_ID,
             )
+        )
 
-            if "Session" in response:
-                self._session = response["Session"]
+        if "Session" in response:
+            self._session = response["Session"]
 
-            self._id_token = response["AuthenticationResult"]["IdToken"]
-            self._access_token = response["AuthenticationResult"]["AccessToken"]
-            if "RefreshToken" in response["AuthenticationResult"]:
-                self._refresh_token = response["AuthenticationResult"]["RefreshToken"]
-            self.token_expires_time = (
-                time.time() + response["AuthenticationResult"]["ExpiresIn"]
-            )
+        self._id_token = response["AuthenticationResult"]["IdToken"]
+        self._access_token = response["AuthenticationResult"]["AccessToken"]
+        if "RefreshToken" in response["AuthenticationResult"]:
+            self._refresh_token = response["AuthenticationResult"]["RefreshToken"]
+        self.token_expires_time = (
+            time.time() + response["AuthenticationResult"]["ExpiresIn"]
+        )
 
     async def api_post(self, path: str = "", data: dict = None):
         """
