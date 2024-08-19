@@ -243,7 +243,7 @@ class PetSafeClient:
         :return: the request response
 
         """
-        headers = self.__get_headers()
+        headers = await self.__get_headers()
         response = await self._client.patch(
             PETSAFE_API_BASE + path, headers=headers, json=data
         )
