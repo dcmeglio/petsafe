@@ -198,6 +198,11 @@ class PetSafeClient:
         response = await self._client.post(
             PETSAFE_API_BASE + path, headers=headers, json=data
         )
+        if response.status_code == 403:
+            await self.__refresh_tokens()
+            response = await self._client.post(
+                PETSAFE_API_BASE + path, headers=headers, json=data
+            )
         response.raise_for_status()
         return response
 
@@ -213,6 +218,9 @@ class PetSafeClient:
         """
         headers = await self.__get_headers()
         response = await self._client.get(PETSAFE_API_BASE + path, headers=headers)
+        if response.status_code == 403:
+            await self.__refresh_tokens()
+            response = await self._client.get(PETSAFE_API_BASE + path, headers=headers)
         response.raise_for_status()
         return response
 
@@ -229,6 +237,9 @@ class PetSafeClient:
         """
         headers = await self.__get_headers()
         response = await self._client.put(PETSAFE_API_BASE + path, headers=headers, json=data)
+        if response.status_code == 403:
+            await self.__refresh_tokens()
+            response = await self._client.put(PETSAFE_API_BASE + path, headers=headers, json=data)
         response.raise_for_status()
         return response
 
@@ -246,7 +257,12 @@ class PetSafeClient:
         headers = await self.__get_headers()
         response = await self._client.patch(
             PETSAFE_API_BASE + path, headers=headers, json=data
-        )
+        )        
+        if response.status_code == 403:
+            await self.__refresh_tokens()
+            response = await self._client.patch(
+                PETSAFE_API_BASE + path, headers=headers, json=data
+            )
         response.raise_for_status()
         return response
 
@@ -263,6 +279,9 @@ class PetSafeClient:
         """
         headers = await self.__get_headers()
         response = await self._client.delete(PETSAFE_API_BASE + path, headers=headers)
+        if response.status_code == 403:
+            await self.__refresh_tokens()
+            response = await self._client.delete(PETSAFE_API_BASE + path, headers=headers)
         response.raise_for_status()
         return response
 
