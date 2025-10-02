@@ -111,6 +111,38 @@ elif status == 2:
 
 ```
 
+## SmartDoor controls
+```python
+import asyncio
+
+import petsafe as sf
+
+
+async def main() -> None:
+    client = sf.PetSafeClient(
+        email="email@example.com",
+        id_token="YOUR_ID_TOKEN",
+        refresh_token="YOUR_REFRESH_TOKEN",
+        access_token="YOUR_ACCESS_TOKEN",
+    )
+
+    doors = await client.get_smartdoors()
+    door = doors[0]
+
+    # Manually lock the door and refresh its reported state
+    await door.lock()
+
+    # Switch back to Smart mode without forcing a refresh
+    await door.smart_mode(update_data=False)
+
+    # Or use the client helpers that return the updated door instance
+    updated = await client.manual_unlock_smartdoor(door.api_name)
+    print(updated.mode)
+
+
+asyncio.run(main())
+```
+
 # get litterboxes
 ```python
 import petsafe as sf
